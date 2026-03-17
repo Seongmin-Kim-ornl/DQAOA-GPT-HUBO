@@ -15,7 +15,6 @@ pip install -r requirements.txt
 ```
 
 > **Note:** `cuda-quantum` installation depends on your CUDA version — see the [NVIDIA CUDA-Q docs](https://nvidia.github.io/cuda-quantum/latest) for the correct wheel.
-> `gurobipy` is optional and requires a Gurobi license.
 
 ---
 
@@ -62,8 +61,8 @@ Key arguments:
 | `--n_nodes` | 4 | Number of binary variables per sub-HUBO |
 | `--hubo_number` | 500 | Number of HUBOs to generate |
 | `--rounding_digits` | 1 | Coefficient precision (1 = smaller vocab, recommended) |
-| `--density` | 0.5 | Coefficient density |
-| `--weight_range` | 1.0 | Coefficients sampled from U(-w, w) |
+| `--density` | 0.5 | Coefficient density (random HUBOs only, not used with `--from_formulated`) |
+| `--weight_range` | 1.0 | Coefficients sampled from U(-w, w) (random HUBOs only, not used with `--from_formulated`) |
 | `--op_pool` | all_pool | ADAPT operator pool |
 | `--approx_ratio` | 0.97 | Minimum approximation ratio to accept a solution |
 | `--output_dir` | adapt_results_hubo | Output directory |
@@ -80,8 +79,7 @@ python step2_tokenize.py \
     --save_dir nanoGPT/data/hubo_4nodes \
     --n_nodes 4 \
     --rounding_digits 1 \
-    --max_abs_param 20 \
-    --approx_ratio_thr 0.0
+    --approx_ratio_thr 0.5
 ```
 
 Key arguments:
@@ -91,10 +89,8 @@ Key arguments:
 | `--results_dir` | adapt_results_hubo | Output directory from Step 1 |
 | `--save_dir` | nanoGPT/data/hubo_save_dir | Output directory for tokenized data |
 | `--n_nodes` | 4 | Must match Step 1 |
-| `--rounding_digits` | 2 | Must match Step 1 |
-| `--max_block_size` | 256 | nanoGPT context window size |
-| `--approx_ratio_thr` | 0.97 | Minimum approximation ratio filter |
-| `--val_frac` / `--test_frac` | 0.1 | Validation / test split fractions |
+| `--rounding_digits` | 1 | Must match Step 1 |
+| `--approx_ratio_thr` | 0.5 | Minimum approximation ratio filter |
 
 ---
 
@@ -153,16 +149,8 @@ Key arguments:
 | `--hubo_size` | 100 | Full HUBO size N |
 | `--sub_n` | 4 | Sub-HUBO size (must match training) |
 | `--iterations` | 200 | DQAOA iterations |
-| `--num_shots` | 1024 | Quantum circuit shots per sub-HUBO |
 | `--load_txt` | — | Load HUBO from text files in `--hubo_dir` |
-| `--hubo_npy` | — | Load HUBO from a `.npy` file |
 | `--save_solution` | None | Path to save the solution vector (`.npy`) |
-
----
-
-## Notebook
-
-`pipeline.ipynb` combines all four steps in a single interactive notebook. Edit the `# --- Parameters ---` block at the top of each cell and run them in order.
 
 ---
 
@@ -173,7 +161,6 @@ Key arguments:
 ├── step2_tokenize.py            # Step 2: tokenization
 ├── step3_train.py               # Step 3: GPT training
 ├── step4_solve_large_hubo.py    # Step 4: DQAOA solver
-├── pipeline.ipynb               # All-in-one notebook
 ├── DQAOA.py                     # DQAOA class
 ├── subHUBO_gen.py               # Sub-HUBO decomposition
 ├── qaoa_gpt_src/                # Core library (ADAPT-QAOA, tokenizer, model interface)
