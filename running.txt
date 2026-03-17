@@ -1,0 +1,29 @@
+
+python step1_generate_data.py \
+    --from_formulated --hubo_size 100 \
+    --n_nodes 4 --hubo_number 30 \
+    --rounding_digits 1 \
+    --output_dir adapt_results_hubo #--quiet
+
+python step2_tokenize.py \
+      --results_dir adapt_results_hubo \
+      --save_dir nanoGPT/data/hubo_4nodes \
+      --n_nodes 4 \
+      --rounding_digits 1 \
+      --max_abs_param 20 \
+      --approx_ratio_thr 0.00
+
+python step3_train.py \
+      --data_dir nanoGPT/data/hubo_4nodes \
+      --max_iters 5000 \
+
+python step4_solve_large_hubo.py --solver gpt \
+      --load_txt --hubo_size 100 --ctn 0 --hubo_dir ./HUBOs \
+      --ckpt nanoGPT/out-hubo_4nodes/ckpt_5000.pt \
+      --sub_n 4 --iterations 100
+
+python step4_solve_large_hubo.py --solver qaoa \
+    --load_txt --hubo_size 100 --ctn 1 --hubo_dir ./HUBOs \
+    --sub_n 4 --iterations 100
+
+
