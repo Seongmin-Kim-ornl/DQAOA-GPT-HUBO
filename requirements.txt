@@ -1,12 +1,5 @@
-numpy==2.26
+numpy==2.2.6
 scipy==1.16.1
 pandas==2.3.1
 cudaq==0.12.0
 networkx==3.5
-'''
-tiktoken==
-tqdm==4.67.1
-joblib==
-texttable==
-requests==
-datasets=='''
