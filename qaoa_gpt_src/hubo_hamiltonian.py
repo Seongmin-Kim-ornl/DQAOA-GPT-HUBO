@@ -100,19 +100,8 @@ def hubo_to_interaction_lists(T, rounding_digits=2):
     return linear_list, quad_list, cubic_list
 
 def evaluate_hubo_energy(T, x):
-    n = T.shape[0]
     x = np.asarray(x, dtype=float)
-    energy = 0.0
-    for i in range(n):
-        energy += float(T[i, i, i]) * x[i]
-    for i in range(n):
-        for j in range(i + 1, n):
-            energy += float(T[i, i, j]) * x[i] * x[j]
-    for i in range(n):
-        for j in range(i + 1, n):
-            for k in range(j + 1, n):
-                energy += float(T[i, j, k]) * x[i] * x[j] * x[k]
-    return energy
+    return float(np.einsum('ijk,i,j,k->', T, x, x, x))
 
 def evaluate_hubo_energy_factorized(Q, k_third, x):
     """O(N^2) energy evaluation using the factorized HUBO representation.
