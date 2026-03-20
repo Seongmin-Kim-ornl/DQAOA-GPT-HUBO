@@ -53,7 +53,7 @@ def load_hubo_from_txt(hubo_size, ctn=0, hubo_dir="."):
         for j in range(i + 1, hubo_size):
             for k in range(j + 1, hubo_size):
                 T[i, j, k] = float(np.sum(k_third[i, :] * k_third[j, :] * k_third[k, :]))
-    return T
+    return T, Q, k_third
 
 def parse_args():
     p = argparse.ArgumentParser(
@@ -135,18 +135,23 @@ def main():
                 print(f"ERROR: {label} not found: {path}")
                 sys.exit(1)
 
+    Q_full = k_third_full = None   # factorized form; set when available
+
     if args.hubo_npy:
         print(f"Loading HUBO tensor from: {args.hubo_npy}")
         T_full = np.load(args.hubo_npy)
         hubo_size = T_full.shape[0]
     elif args.load_formulated:
         print(f"Loading formulated HUBO (size={args.hubo_size})...")
-        from subHUBO_gen import formulate_HUBO
+        from subHUBO_gen import formulate_HUBO, load_QUBO, load_k_third
         T_full = formulate_HUBO(args.hubo_size)
+        Q_full       = load_QUBO(args.hubo_size)
+        k_third_full = load_k_third(args.hubo_size)
         hubo_size = args.hubo_size
     elif args.load_txt:
         print(f"Loading HUBO from text files (size={args.hubo_size}, ctn={args.ctn})...")
-        T_full = load_hubo_from_txt(args.hubo_size, ctn=args.ctn, hubo_dir=args.hubo_dir)
+        T_full, Q_full, k_third_full = load_hubo_from_txt(
+            args.hubo_size, ctn=args.ctn, hubo_dir=args.hubo_dir)
         hubo_size = args.hubo_size
     else:
         print(f"Generating random HUBO (size={args.hubo_size}, seed={args.seed_hubo})...")
@@ -172,6 +177,7 @@ def main():
         print(f"  num_layers  : {args.qaoa_num_layers}")
         print(f"  max_iters   : {args.qaoa_max_iters}  (COBYLA per sub-HUBO)")
         print(f"  target      : {args.qaoa_target}")
+    print(f"  energy eval : {'factorized O(N^2)' if Q_full is not None else 'dense O(N^3)'}")
     print("=" * 60)
 
 
@@ -193,6 +199,8 @@ def main():
         qaoa_target=args.qaoa_target,
         qaoa_reverse_bitorder=args.qaoa_reverse_bitorder,
         solver=args.solver,
+        Q=Q_full,
+        k_third=k_third_full,
     )
 
     t0 = time.time()

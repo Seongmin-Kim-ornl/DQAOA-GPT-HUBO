@@ -114,6 +114,51 @@ def evaluate_hubo_energy(T, x):
                 energy += float(T[i, j, k]) * x[i] * x[j] * x[k]
     return energy
 
+def evaluate_hubo_energy_factorized(Q, k_third, x):
+    """O(N^2) energy evaluation using the factorized HUBO representation.
+
+    The HUBO is split into:
+      - Linear terms:    T[i,i,i] = Q[i,i]
+      - Quadratic terms: T[i,i,j] = Q[i,j]  for i < j   (O(N^2) via matmul)
+      - Cubic terms:     T[i,j,k] = sum_s K[i,s]*K[j,s]*K[k,s]  (O(N*r) via ANOVA-3)
+
+    The cubic contribution is computed with the degree-3 ANOVA kernel trick:
+      E_cubic = (1/6) * (H3 - 3*D21 + 2*D3)
+    where
+      H3  = sum_s (K^T x)_s^3
+      D3  = sum_s (K^3^T x)_s          (x binary => x^3 = x)
+      D21 = sum_s (K^2^T x)_s * (K^T x)_s
+
+    Parameters
+    ----------
+    Q       : ndarray (N, N)  QUBO matrix; diagonal = linear coefficients,
+                               upper triangle = quadratic coefficients.
+    k_third : ndarray (N, r)  Rank-r factor matrix for the cubic tensor.
+    x       : ndarray (N,)    Binary solution vector.
+
+    Returns
+    -------
+    float  HUBO energy value.
+    """
+    x = np.asarray(x, dtype=np.float64)
+    K = k_third.astype(np.float64)
+
+    # Linear + quadratic via QUBO (upper triangle + diagonal)
+    energy = np.dot(np.diag(Q), x)                 # O(N)
+    energy += float(x @ np.triu(Q, 1) @ x)         # O(N^2)
+
+    # Cubic via ANOVA-3 kernel trick                 O(N*r)
+    Kx  = K.T @ x          # (r,): sum_i K[i,s]*x[i]
+    Kx2 = (K ** 2).T @ x   # (r,): sum_i K[i,s]^2*x[i]  (x binary => x^2=x)
+    Kx3 = (K ** 3).T @ x   # (r,): sum_i K[i,s]^3*x[i]
+
+    H3  = np.sum(Kx ** 3)
+    D3  = np.sum(Kx3)
+    D21 = np.sum(Kx2 * Kx)
+
+    energy += (1.0 / 6.0) * (H3 - 3.0 * D21 + 2.0 * D3)
+    return float(energy)
+
 def evaluate_ising_energy_from_hubo(T, x):
     n = T.shape[0]
     z = 1.0 - 2.0 * np.asarray(x, dtype=float)

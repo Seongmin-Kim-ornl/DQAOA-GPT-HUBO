@@ -6,7 +6,10 @@ import warnings
 warnings.simplefilter("ignore")
 
 from subHUBO_gen import make_sub_HUBO
-from qaoa_gpt_src.hubo_hamiltonian import evaluate_hubo_energy
+from qaoa_gpt_src.hubo_hamiltonian import (
+    evaluate_hubo_energy,
+    evaluate_hubo_energy_factorized,
+)
 from utils.solve_HUBO_GPT import solve_sub_HUBO_GPT
 from utils.qaoa_CudaQ_hubo import solve_HUBO_CUDAQ
 
@@ -28,7 +31,9 @@ class DQAOA:
                  qaoa_max_iters=200,
                  qaoa_target='nvidia',
                  qaoa_reverse_bitorder=False,
-                 solver='gpt'):
+                 solver='gpt',
+                 Q=None,
+                 k_third=None):
 
         assert T.ndim == 3 and T.shape[0] == T.shape[1] == T.shape[2], \
             "T must be a 3D cubic tensor of shape (N, N, N)."
@@ -51,14 +56,22 @@ class DQAOA:
         self.qaoa_target = qaoa_target
         self.qaoa_reverse_bitorder = qaoa_reverse_bitorder
         self.solver = solver
+        self.Q = Q
+        self.k_third = k_third
+        self._use_factorized = (Q is not None) and (k_third is not None)
 
         self.x_optimal = None
+
+    def _eval_energy(self, x):
+        if self._use_factorized:
+            return evaluate_hubo_energy_factorized(self.Q, self.k_third, x)
+        return evaluate_hubo_energy(self.T, x)
 
     def initialize(self):
         rng = np.random.default_rng(self.seed)
         self.x_optimal = rng.integers(0, 2, size=self.N).astype(float)
         if self.verbose:
-            init_e = evaluate_hubo_energy(self.T, self.x_optimal)
+            init_e = self._eval_energy(self.x_optimal)
             print(f"[dqHUBO] Initialized: energy = {init_e:.4f}")
 
     def decompose(self):
@@ -88,13 +101,13 @@ class DQAOA:
             )
 
     def aggregate(self, x_sub, choicelist):
-        current_energy = evaluate_hubo_energy(self.T, self.x_optimal)
+        current_energy = self._eval_energy(self.x_optimal)
 
         for local_idx, global_idx in enumerate(choicelist):
             x_candidate = self.x_optimal.copy()
             x_candidate[global_idx] = x_sub[local_idx]
 
-            candidate_energy = evaluate_hubo_energy(self.T, x_candidate)
+            candidate_energy = self._eval_energy(x_candidate)
             if candidate_energy < current_energy:
                 self.x_optimal = x_candidate
                 current_energy = candidate_energy
@@ -109,12 +122,12 @@ class DQAOA:
             self.aggregate(x_sub, choicelist)
 
             if self.verbose and (cycle + 1) % 10 == 0:
-                cur_energy = evaluate_hubo_energy(self.T, self.x_optimal)
+                cur_energy = self._eval_energy(self.x_optimal)
                 elapsed = time.time() - tic
                 print(f"[dqHUBO] iter {cycle + 1}/{self.iterations}  "
                       f"energy={cur_energy:.4f}  elapsed={elapsed:.1f}s")
 
-        best_energy = evaluate_hubo_energy(self.T, self.x_optimal)
+        best_energy = self._eval_energy(self.x_optimal)
         if self.verbose:
             print(f"[dqHUBO] Done. Best energy = {best_energy:.4f}  "
                   f"total time = {time.time() - tic:.1f}s")
