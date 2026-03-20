@@ -112,6 +112,10 @@ def parse_args():
     p.add_argument("--num_shots",  type=int, default=1024)
     p.add_argument("--seed_dq",    type=int, default=12345)
 
+    p.add_argument("--no_factorized", action="store_true",
+                   help="Disable factorized O(N^2) energy evaluation and use "
+                        "dense np.einsum O(N^3) instead (only relevant for "
+                        "--load_txt and --load_formulated modes)")
     p.add_argument("--save_solution", type=str, default=None)
     p.add_argument("--verbose",       action="store_true")
 
@@ -135,7 +139,7 @@ def main():
                 print(f"ERROR: {label} not found: {path}")
                 sys.exit(1)
 
-    Q_full = k_third_full = None   # factorized form; set when available
+    Q_full = k_third_full = None   # factorized form; set when available (unless disabled)
 
     if args.hubo_npy:
         print(f"Loading HUBO tensor from: {args.hubo_npy}")
@@ -145,13 +149,16 @@ def main():
         print(f"Loading formulated HUBO (size={args.hubo_size})...")
         from subHUBO_gen import formulate_HUBO, load_QUBO, load_k_third
         T_full = formulate_HUBO(args.hubo_size)
-        Q_full       = load_QUBO(args.hubo_size)
-        k_third_full = load_k_third(args.hubo_size)
+        if not args.no_factorized:
+            Q_full       = load_QUBO(args.hubo_size)
+            k_third_full = load_k_third(args.hubo_size)
         hubo_size = args.hubo_size
     elif args.load_txt:
         print(f"Loading HUBO from text files (size={args.hubo_size}, ctn={args.ctn})...")
         T_full, Q_full, k_third_full = load_hubo_from_txt(
             args.hubo_size, ctn=args.ctn, hubo_dir=args.hubo_dir)
+        if args.no_factorized:
+            Q_full = k_third_full = None
         hubo_size = args.hubo_size
     else:
         print(f"Generating random HUBO (size={args.hubo_size}, seed={args.seed_hubo})...")
