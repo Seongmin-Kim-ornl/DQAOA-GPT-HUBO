@@ -3,7 +3,7 @@ python step1_generate_data.py \
     --from_formulated --hubo_size 100 \
     --n_nodes 4 --hubo_number 30 \
     --rounding_digits 1 \
-    --output_dir adapt_results_hubo #--quiet
+    --output_dir adapt_results_hubo --quiet
 
 python step2_tokenize.py \
       --results_dir adapt_results_hubo \
@@ -16,6 +16,7 @@ python step2_tokenize.py \
 python step3_train.py \
       --data_dir nanoGPT/data/hubo_4nodes \
       --max_iters 5000 \
+      --ckpt_name ckpt_5000
 
 python step4_solve_large_hubo.py --solver gpt \
       --load_txt --hubo_size 100 --ctn 0 --hubo_dir ./HUBOs \
