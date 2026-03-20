@@ -5,7 +5,7 @@ import os
 import math
 import glob
 
-feather_path = '/autofs/nccsopen-svm1_home/gvk/defiant/CudaQ/3.QAOA_GPT/cuda-quantum/QAOA-GPT/qaoa_gpt_src'
+feather_path = os.path.dirname(os.path.abspath(__file__))
 
 if feather_path not in sys.path:
     sys.path.append(feather_path)
