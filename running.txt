@@ -22,21 +22,9 @@ python step4_inference_test.py \
       --n_nodes 6 --n_test 30 --trim_n 2 \
       --from_formulated --hubo_size 100 --num_gpt_samples 10
 
-python step4-4_qaoa_iqm.py \
-      --ckpt nanoGPT/out-hubo_6nodes/ckpt_6nodes.pt \
-      --data_dir nanoGPT/data/hubo_6nodes \
-      --n_nodes 6 --n_test 30 --trim_n 2 \
-      --from_formulated --hubo_size 100 --num_gpt_samples 10 --qpu_architecture Garnet
-
-
-
-python step4_solve_large_hubo.py --solver gpt \
+python step5_solve_large_hubo.py --solver gpt \
       --load_txt --hubo_size 200 --ctn 0 --hubo_dir ./HUBOs \
       --ckpt nanoGPT/out-hubo_4nodes/ckpt_5000.pt \
       --sub_n 4 --iterations 100 \
-      
-python step4_solve_large_hubo.py --solver qaoa \
-    --load_txt --hubo_size 100 --ctn 1 --hubo_dir ./HUBOs \
-    --sub_n 4 --iterations 100
 
 
