@@ -23,7 +23,21 @@ os.environ["CUDA_QUANTUM_OPTIMIZATION_LEVEL"] = "0"
 os.environ["CUDAQ_DISABLE_LOOP_UNROLL"] = "1"
 os.environ["IONQ_API_KEY"] = "yRN1cxbzPTR94Fk84rZ4hZVthUfYV6RV"
 
-cudaq.set_target("nvidia", option="fp64")
+def _set_cudaq_target():
+    _requested = os.environ.get("CUDAQ_TARGET", "auto")
+    if _requested not in ("auto", "nvidia"):
+        cudaq.set_target(_requested)
+        return
+    cudaq.set_target("nvidia", option="fp64")
+    try:
+        @cudaq.kernel
+        def _probe():
+            q = cudaq.qvector(1)
+            h(q[0])
+        cudaq.sample(_probe, shots_count=1)
+    except Exception:
+        cudaq.set_target("qpp-cpu")
+_set_cudaq_target()
 
 def generate_circ_from_df(
     test_run_df,
@@ -175,11 +189,9 @@ def generate_circ_from_df(
     for idx in range(len(adapt_gpt_test_samples_list)):
         q_circ_filt_list = []
         for circ in adapt_gpt_test_samples_list[idx]['q_circuits']:
-            filt_flag = circ_sanity_check(circ)
-            q_circ_filt_list.append(circ)
+            if circ_sanity_check(circ):
+                q_circ_filt_list.append(circ)
         adapt_gpt_test_samples_list[idx]['q_circuits'] = q_circ_filt_list
-
-    adapt_gpt_test_samples_list[idx]['q_circuits'] = q_circ_filt_list
 
     for gr_dict in adapt_gpt_test_samples_list:
         graph_py_list = []

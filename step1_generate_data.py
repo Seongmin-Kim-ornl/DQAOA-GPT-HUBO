@@ -35,8 +35,8 @@ def parse_args():
                    choices=["all_pool", "qaoa_mixer", "qaoa_single_x", "qaoa_double_ops"])
     p.add_argument("--optimizer",    type=str,   default="BFGS",
                    choices=["BFGS", "L-BFGS-B", "COBYLA"])
-    p.add_argument("--approx_ratio", type=float, default=0.97)
-    p.add_argument("--max_iter",     type=int,   default=10)
+    p.add_argument("--approx_ratio", type=float, default=0.8)
+    p.add_argument("--max_iter",     type=int,   default=15)
     p.add_argument("--trials",       type=int,   default=1)
     p.add_argument("--init_gamma",   type=float, nargs="+", default=[0.01])
     p.add_argument("--multi_gamma",  action="store_true")
@@ -46,7 +46,10 @@ def parse_args():
 
     p.add_argument("--npy_dir", type=str, default=None)
 
-    p.add_argument("--output_dir", type=str, default="adapt_results_hubo")
+    p.add_argument("--output_dir",       type=str, default="adapt_results_hubo")
+    p.add_argument("--checkpoint_every", type=int, default=None,
+                   help="Save partial results every N HUBOs (overwrites same file). "
+                        "Useful for long runs to avoid losing all progress on crash.")
     p.add_argument("--seed_hubo",  type=int, default=42)
     p.add_argument("--seed_adapt", type=int, default=None)
     p.add_argument("--quiet",      action="store_true")
@@ -104,6 +107,7 @@ def main():
         seed_hubo=args.seed_hubo,
         seed_adapt=args.seed_adapt,
         verbose=not args.quiet,
+        checkpoint_every=args.checkpoint_every,
     )
 
     print(f"Results saved to: {args.output_dir}/res/  and  {args.output_dir}/hubo/")

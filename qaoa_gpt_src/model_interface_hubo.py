@@ -109,7 +109,8 @@ class HUBO_GPT:
                                       num_samples=1,
                                       max_new_tokens=150,
                                       temperature=0.1,
-                                      top_k=200):
+                                      top_k=200,
+                                      rounding_digits=2):
         if isinstance(sub_hubos_container, list):
             sub_hubos_dict = {f'sub_hubo_{i}': T
                               for i, T in enumerate(sub_hubos_container)}
@@ -121,6 +122,7 @@ class HUBO_GPT:
         hubo_nx_df, feather_par_emb, emb_graph_id_to_idx = prepare_model_input_hubo(
             sub_hubos_dict,
             n_nodes=self.n_nodes,
+            rounding_digits=rounding_digits,
         )
 
         emb_dtype = (self.dtype if self.device != 'cpu' else 'float')

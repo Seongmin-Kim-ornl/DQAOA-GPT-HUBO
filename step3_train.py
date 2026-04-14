@@ -23,7 +23,8 @@ def parse_args():
     p.add_argument("--n_head",      type=int,   default=None, help="Attention heads")
     p.add_argument("--n_embd",      type=int,   default=None, help="Embedding dimension")
     p.add_argument("--dropout",     type=float, default=None, help="Dropout rate")
-    p.add_argument("--learning_rate", type=float, default=None, help="Learning rate")
+    p.add_argument("--learning_rate",   type=float, default=None, help="Learning rate")
+    p.add_argument("--lr_decay_iters", type=int,   default=None, help="Iters over which LR decays to min_lr (default: same as max_iters)")
     p.add_argument("--device",      type=str,   default=None,
                    choices=["cuda", "cpu", "mps"],
                    help="Device (default: uses config value)")
@@ -67,7 +68,8 @@ def main():
         "n_head":        args.n_head,
         "n_embd":        args.n_embd,
         "dropout":       args.dropout,
-        "learning_rate": args.learning_rate,
+        "learning_rate":   args.learning_rate,
+        "lr_decay_iters":  args.lr_decay_iters,
         "device":        f"'{args.device}'" if args.device else None,
         "compile":       args.compile,
         "eval_interval": args.eval_interval,

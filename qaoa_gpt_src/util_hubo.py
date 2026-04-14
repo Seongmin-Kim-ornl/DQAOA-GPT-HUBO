@@ -23,7 +23,21 @@ from qaoa_gpt_src.adapt_qaoa_pool import all_pool, qaoa_mixer, qaoa_single_x, qa
 os.environ["CUDA_QUANTUM_OPTIMIZATION_LEVEL"] = "0"
 os.environ["CUDAQ_DISABLE_LOOP_UNROLL"] = "1"
 
-cudaq.set_target("nvidia", option="fp64")
+def _set_cudaq_target():
+    _requested = os.environ.get("CUDAQ_TARGET", "auto")
+    if _requested not in ("auto", "nvidia"):
+        cudaq.set_target(_requested)
+        return
+    cudaq.set_target("nvidia", option="fp64")
+    try:
+        @cudaq.kernel
+        def _probe():
+            q = cudaq.qvector(1)
+            h(q[0])
+        cudaq.sample(_probe, shots_count=1)
+    except Exception:
+        cudaq.set_target("qpp-cpu")
+_set_cudaq_target()
 
 def seq_tokenize_hubo(linear_list, quad_list, cubic_list):
     tok_list = ['bos']
@@ -77,7 +91,7 @@ def get_feather_emb_hubo(hubo_df, n_nodes, n_workers=1, rounding_digits=2):
     return feather_emb.round(rounding_digits), emb_graph_idx_to_id
 
 def prepare_model_input_hubo(sub_hubos_dict, n_nodes,
-                               n_workers_feather=1, rounding_digits=2):
+                               n_workers_feather=1, rounding_digits=1):
     rows = []
     for name, T in sub_hubos_dict.items():
         linear_list, quad_list, cubic_list = hubo_to_interaction_lists(

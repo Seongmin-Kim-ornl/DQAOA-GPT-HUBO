@@ -25,6 +25,8 @@ class DQAOA:
                  device='cuda',
                  pool_type='all_pool',
                  num_shots=1024,
+                 num_gpt_samples=10,
+                 temperature=0.8,
                  seed=12345,
                  verbose=False,
                  qaoa_num_layers=2,
@@ -49,6 +51,8 @@ class DQAOA:
         self.device = device
         self.pool_type = pool_type
         self.num_shots = num_shots
+        self.num_gpt_samples = num_gpt_samples
+        self.temperature = temperature
         self.seed = seed
         self.verbose = verbose
         self.qaoa_num_layers = qaoa_num_layers
@@ -88,6 +92,8 @@ class DQAOA:
                 device=self.device,
                 num_shots=self.num_shots,
                 pool_type=self.pool_type,
+                num_gpt_samples=self.num_gpt_samples,
+                temperature=self.temperature,
                 verbose=self.verbose,
             )
         else:

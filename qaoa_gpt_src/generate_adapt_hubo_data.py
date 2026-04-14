@@ -59,7 +59,8 @@ def generate_data_hubo(output_dir='adapt_results_hubo',
                         multi_gamma=False,
                         seed_hubo=None,
                         seed_adapt=None,
-                        verbose=True):
+                        verbose=True,
+                        checkpoint_every=None):
     if init_gamma is None:
         init_gamma = [0.01]
 
@@ -117,6 +118,11 @@ def generate_data_hubo(output_dir='adapt_results_hubo',
 
     hubo_rows = []
     result_rows = []
+
+    hubo_csv_path = os.path.join(output_dir, 'hubo',
+                                 f'pid{pid}_{ts_string}_hubo.csv')
+    results_csv_path = os.path.join(output_dir, 'res',
+                                    f'pid{pid}_{ts_string}_results.csv')
 
     for hubo_num, T in enumerate(tensor_list):
 
@@ -239,19 +245,18 @@ def generate_data_hubo(output_dir='adapt_results_hubo',
             if adapt_result[5] >= approx_ratio and not multi_gamma:
                 break
 
+        if checkpoint_every and (hubo_num + 1) % checkpoint_every == 0:
+            pd.DataFrame(hubo_rows).to_csv(hubo_csv_path, index=False)
+            pd.DataFrame(result_rows).to_csv(results_csv_path, index=False)
+            if verbose:
+                print(f"  [checkpoint] Saved {hubo_num + 1}/{hubo_number} HUBOs "
+                      f"to {hubo_csv_path}")
+
     hubo_df = pd.DataFrame(hubo_rows)
     results_df = pd.DataFrame(result_rows)
 
-    hubo_df.to_csv(
-        os.path.join(output_dir, 'hubo',
-                     f'pid{pid}_{ts_string}_hubo.csv'),
-        index=False,
-    )
-    results_df.to_csv(
-        os.path.join(output_dir, 'res',
-                     f'pid{pid}_{ts_string}_results.csv'),
-        index=False,
-    )
+    hubo_df.to_csv(hubo_csv_path, index=False)
+    results_df.to_csv(results_csv_path, index=False)
 
     if verbose:
         print("\nData generation completed.")

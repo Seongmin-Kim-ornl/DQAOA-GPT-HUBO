@@ -7,6 +7,17 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Set CUDAQ_TARGET before any cudaq-importing modules are loaded.
+# Sniff --cudaq_target from sys.argv so it takes effect at import time.
+if "CUDAQ_TARGET" not in os.environ:
+    for _i, _a in enumerate(sys.argv):
+        if _a == "--cudaq_target" and _i + 1 < len(sys.argv):
+            os.environ["CUDAQ_TARGET"] = sys.argv[_i + 1]
+            break
+        if _a.startswith("--cudaq_target="):
+            os.environ["CUDAQ_TARGET"] = _a.split("=", 1)[1]
+            break
+
 from qaoa_gpt_src.hubo_hamiltonian import (
     generate_random_hubo,
     evaluate_hubo_energy,
@@ -71,8 +82,12 @@ def parse_args():
                    help="[gpt] Directory with meta.pkl. Defaults to dirname(--ckpt).")
     p.add_argument("--config_file", type=str, default=None,
                    help="[gpt] Config .py. Defaults to <data_dir>/train_adapt_gpt_config.py")
-    p.add_argument("--device",    type=str, default="cuda",
+    p.add_argument("--device",       type=str, default="cuda",
                    choices=["cuda", "cpu"])
+    p.add_argument("--cudaq_target", type=str, default="auto",
+                   choices=["auto", "nvidia", "qpp-cpu"],
+                   help="[gpt] CUDA-Q target for quantum circuit simulation. "
+                        "'auto' uses nvidia if GPU available, else qpp-cpu (default: auto)")
     p.add_argument("--pool_type", type=str, default="all_pool",
                    choices=["all_pool", "qaoa_mixer", "qaoa_single_x", "qaoa_double_ops"])
 
@@ -109,7 +124,11 @@ def parse_args():
     p.add_argument("--sub_n",      type=int, default=4,
                    help="Sub-HUBO size (must match n_nodes from training for --solver gpt)")
     p.add_argument("--iterations", type=int, default=200)
-    p.add_argument("--num_shots",  type=int, default=1024)
+    p.add_argument("--num_shots",       type=int,   default=1024)
+    p.add_argument("--num_gpt_samples", type=int,   default=10,
+                   help="[gpt] GPT candidate circuits per sub-HUBO; best energy is kept (default: 10)")
+    p.add_argument("--temperature",     type=float, default=0.8,
+                   help="[gpt] GPT sampling temperature (default: 0.8)")
     p.add_argument("--seed_dq",    type=int, default=12345)
 
     p.add_argument("--no_factorized", action="store_true",
@@ -123,6 +142,13 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    # Resolve unified cudaq target: --cudaq_target overrides --qaoa_target default
+    cudaq_target = args.cudaq_target  # "auto", "nvidia", or "qpp-cpu"
+    if cudaq_target == "auto":
+        cudaq_target = os.environ.get("CUDAQ_TARGET", "nvidia")
+    # For the QAOA solver, use --qaoa_target if explicitly passed, else use cudaq_target
+    qaoa_target = args.qaoa_target if args.qaoa_target != "nvidia" else cudaq_target
 
     ckpt = data_dir = config_file = None
 
@@ -179,11 +205,14 @@ def main():
     print(f"  iterations  : {args.iterations}")
     if args.solver == "gpt":
         print(f"  checkpoint  : {ckpt}")
-        print(f"  device      : {args.device}")
+        print(f"  device      : {args.device}  (GPT model)")
+        print(f"  cudaq_target: {os.environ.get('CUDAQ_TARGET', 'auto')}  (circuit sim)")
+        print(f"  num_gpt_samples: {args.num_gpt_samples}")
+        print(f"  temperature : {args.temperature}")
     else:
         print(f"  num_layers  : {args.qaoa_num_layers}")
         print(f"  max_iters   : {args.qaoa_max_iters}  (COBYLA per sub-HUBO)")
-        print(f"  target      : {args.qaoa_target}")
+        print(f"  target      : {qaoa_target}")
     print(f"  energy eval : {'factorized O(N^2)' if Q_full is not None else 'dense O(N^3)'}")
     print("=" * 60)
 
@@ -199,11 +228,13 @@ def main():
         device=args.device,
         pool_type=args.pool_type,
         num_shots=args.num_shots,
+        num_gpt_samples=args.num_gpt_samples,
+        temperature=args.temperature,
         seed=args.seed_dq,
         verbose=args.verbose,
         qaoa_num_layers=args.qaoa_num_layers,
         qaoa_max_iters=args.qaoa_max_iters,
-        qaoa_target=args.qaoa_target,
+        qaoa_target=qaoa_target,
         qaoa_reverse_bitorder=args.qaoa_reverse_bitorder,
         solver=args.solver,
         Q=Q_full,

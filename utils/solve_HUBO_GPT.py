@@ -16,6 +16,7 @@ if nanogpt_dir not in sys.path:
 
 from qaoa_gpt_src.model_interface_hubo import HUBO_GPT
 from qaoa_gpt_src.util_hubo import solve_hubo_circuits_with_bitstrings
+from qaoa_gpt_src.hubo_hamiltonian import evaluate_hubo_energy
 
 _hubo_gpt_model_cache = {}
 
@@ -37,9 +38,11 @@ def solve_sub_HUBO_GPT(sub_HUBO,
                         device='cuda',
                         num_shots=1024,
                         pool_type='all_pool',
+                        num_gpt_samples=10,
+                        temperature=0.8,
                         verbose=False):
-    sub_HUBO = np.round(sub_HUBO, 2)
     n_nodes = sub_HUBO.shape[0]
+    T_original = sub_HUBO.copy()
 
     if model_ckpt is None:
         gpt_output_dir = 'out-hubo_save_dir'
@@ -61,6 +64,10 @@ def solve_sub_HUBO_GPT(sub_HUBO,
         assert n_nodes == _cfg_n_nodes, \
             f"--sub_n {n_nodes} doesn't match model's n_nodes={_cfg_n_nodes} " \
             f"(checkpoint: {model_ckpt})"
+    _rd_match = re.search(r"token_seq_round\s*=\s*['\"].*_d(\d+)['\"]", _cfg_text)
+    _rounding_digits = int(_rd_match.group(1)) if _rd_match else 2
+
+    sub_HUBO = np.round(sub_HUBO, _rounding_digits)
 
     @contextlib.contextmanager
     def _silence():
@@ -91,10 +98,11 @@ def solve_sub_HUBO_GPT(sub_HUBO,
         qaoa_gpt_circ_df = hubo_gpt_obj.generate_circ_from_sub_hubos(
             {'sub_hubo_0': sub_HUBO},
             n_samples_per_batch=50,
-            num_samples=1,
+            num_samples=num_gpt_samples,
             max_new_tokens=150,
-            temperature=0.1,
+            temperature=temperature,
             top_k=200,
+            rounding_digits=_rounding_digits,
         )
 
     T_dict = {'sub_hubo_0': sub_HUBO}
@@ -108,9 +116,23 @@ def solve_sub_HUBO_GPT(sub_HUBO,
         verbose=verbose,
     )
 
-    bitstring = '0' * n_nodes
-    for _, row in results_df.iterrows():
-        bitstring = row.get('ADAPT_bitstring', '0' * n_nodes)
+    best_bitstring = '0' * n_nodes
+    best_energy = float('inf')
 
-    binary_vector = np.array([int(b) for b in bitstring], dtype=np.uint8)
+    for _, row in results_df.iterrows():
+        candidates = list(row.get('adapt_gpt_bitstrings', []))
+        adapt_bs = row.get('ADAPT_bitstring', None)
+        if adapt_bs:
+            candidates.append(adapt_bs)
+
+        for bs in candidates:
+            if len(bs) != n_nodes:
+                continue
+            x = np.array([int(b) for b in bs], dtype=np.uint8)
+            e = evaluate_hubo_energy(T_original, x)
+            if e < best_energy:
+                best_energy = e
+                best_bitstring = bs
+
+    binary_vector = np.array([int(b) for b in best_bitstring], dtype=np.uint8)
     return binary_vector
