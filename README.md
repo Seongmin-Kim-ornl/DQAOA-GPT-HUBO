@@ -197,7 +197,6 @@ Key arguments:
 | `--num_gpt_samples` | 10 | [gpt] GPT candidate circuits per sub-HUBO |
 | `--load_txt` | — | Load HUBO from text files in `--hubo_dir` |
 | `--load_formulated` | — | Load via `subHUBO_gen.formulate_HUBO()` |
-| `--no_factorized` | — | Use dense O(N³) energy eval instead of factorized O(N²) |
 | `--save_solution` | None | Path to save the solution vector (`.npy`) |
 
 ---
