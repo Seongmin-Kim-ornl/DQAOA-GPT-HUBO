@@ -2,8 +2,9 @@ import numpy as np
 import random
 import os
 
-def load_QUBO(HUBO_size):
-    filename = os.getcwd()  + "/" + str(HUBO_size)+'_QUBO.txt'
+def load_QUBO(HUBO_size, data_dir=None):
+    base = data_dir if data_dir is not None else os.getcwd()
+    filename = os.path.join(base, str(HUBO_size) + '_QUBO.txt')
     QUBO_file = open(filename, 'r')
     A = QUBO_file.read()
     A = np.asmatrix(A)
@@ -13,8 +14,9 @@ def load_QUBO(HUBO_size):
     Q = np.array(Q)
     return Q
 
-def load_k_third(HUBO_size):
-    filename = os.getcwd()  +  "/" + str(HUBO_size)+'_k_third.txt'
+def load_k_third(HUBO_size, data_dir=None):
+    base = data_dir if data_dir is not None else os.getcwd()
+    filename = os.path.join(base, str(HUBO_size) + '_k_third.txt')
     file = open(filename, 'r')
     A = file.read()
     A = np.asmatrix(A)
@@ -23,10 +25,10 @@ def load_k_third(HUBO_size):
     k_third = np.array(k_third)
     return k_third
 
-def formulate_HUBO(HUBO_size):
+def formulate_HUBO(HUBO_size, data_dir=None):
     HUBO = np.zeros((HUBO_size,HUBO_size,HUBO_size))
-    QUBO_2nd = load_QUBO(HUBO_size)
-    k_third = load_k_third(HUBO_size)
+    QUBO_2nd = load_QUBO(HUBO_size, data_dir)
+    k_third = load_k_third(HUBO_size, data_dir)
     for i in range(HUBO_size):
         HUBO[i,i,i] = QUBO_2nd[i,i]
 
