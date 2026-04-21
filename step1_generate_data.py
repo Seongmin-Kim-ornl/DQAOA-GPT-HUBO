@@ -43,6 +43,9 @@ def parse_args():
 
     p.add_argument("--from_formulated", action="store_true")
     p.add_argument("--hubo_size",       type=int, default=None)
+    p.add_argument("--formulated_dir",  type=str, default=None,
+                   help="Directory containing {hubo_size}_QUBO.txt and {hubo_size}_k_third.txt. "
+                        "Defaults to the current working directory.")
 
     p.add_argument("--npy_dir", type=str, default=None)
 
@@ -75,6 +78,8 @@ def main():
     print(f"  output_dir     : {args.output_dir}")
     if args.from_formulated:
         print(f"  mode           : from_formulated (hubo_size={args.hubo_size})")
+        if args.formulated_dir:
+            print(f"  formulated_dir : {args.formulated_dir}")
     elif args.npy_dir:
         print(f"  npy_dir        : {args.npy_dir}")
     else:
@@ -87,6 +92,7 @@ def main():
         hubo_input_npy_dir=args.npy_dir,
         from_formulated=args.from_formulated,
         hubo_size=args.hubo_size,
+        formulated_dir=args.formulated_dir,
         n_nodes=args.n_nodes,
         hubo_number=args.hubo_number,
         include_linear=not args.no_linear,
