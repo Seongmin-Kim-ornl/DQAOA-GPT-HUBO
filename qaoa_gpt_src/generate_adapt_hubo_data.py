@@ -38,6 +38,7 @@ def generate_data_hubo(output_dir='adapt_results_hubo',
                         hubo_input_npy_dir=None,
                         from_formulated=False,
                         hubo_size=None,
+                        formulated_dir=None,
                         n_nodes=4,
                         hubo_number=50,
                         include_linear=True,
@@ -80,7 +81,7 @@ def generate_data_hubo(output_dir='adapt_results_hubo',
         subhubo_gen = importlib.import_module('subHUBO_gen')
         if verbose:
             print(f"Loading formulated HUBO (size={hubo_size}) from text files...")
-        T_full = subhubo_gen.formulate_HUBO(hubo_size)
+        T_full = subhubo_gen.formulate_HUBO(hubo_size, data_dir=formulated_dir)
         if verbose:
             print(f"Full HUBO loaded. Drawing {hubo_number} sub-HUBOs of size {n_nodes}...")
         rng = np.random.default_rng(seed_hubo)
