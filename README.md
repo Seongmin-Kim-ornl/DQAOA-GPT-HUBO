@@ -155,12 +155,12 @@ Key arguments:
 
 Solves a large HUBO by iteratively decomposing it into sub-HUBOs and solving each with the trained GPT model (or standard QAOA). Two modes are available: single-process and MPI-parallel.
 
-### Single-process (`step5_solve_large_hubo.py`)
+### Single-process (`step5_DQAOA_GPT.py`)
 
 **Using GPT sub-solver:**
 
 ```bash
-python step5_solve_large_hubo.py --solver gpt \
+python step5_DQAOA_GPT.py --solver gpt \
     --load_txt --hubo_size 100 --ctn 0 --hubo_dir ./HUBOs \
     --ckpt nanoGPT/out-hubo_4nodes/ckpt.pt \
     --sub_n 4 --iterations 200
@@ -169,7 +169,7 @@ python step5_solve_large_hubo.py --solver gpt \
 **Using standard QAOA sub-solver:**
 
 ```bash
-python step5_solve_large_hubo.py --solver qaoa \
+python step5_DQAOA_GPT.py --solver qaoa \
     --load_txt --hubo_size 100 --ctn 0 --hubo_dir ./HUBOs \
     --sub_n 4 --iterations 200
 ```
@@ -209,7 +209,7 @@ Key arguments:
 ├── step2_tokenize.py            # Step 2: tokenization
 ├── step3_train.py               # Step 3: GPT training
 ├── step4_inference_test.py      # Step 4: inference test (AR statistics)
-├── step5_solve_large_hubo.py    # Step 5: DQAOA solver (single-process)
+├── step5_DQAOA_GPT.py           # Step 5: DQAOA solver (single-process)
 ├── step6_mpi_solve_large_hubo.py# Step 5: DQAOA solver (MPI-parallel)
 ├── DQAOA.py                     # DQAOA class
 ├── subHUBO_gen.py               # Sub-HUBO decomposition
