@@ -37,3 +37,14 @@ srun -N 2 -n 15 python step5_DQAOA_GPT.py \
      --save_solution results/strong_scaling_summary.csv
 
 
+# circuit drawing, gate number counting
+python draw_circuit.py \
+      --ckpt nanoGPT/out-hubo_6nodes/ckpt_6nodes.pt \
+      --n_nodes 6 --num_gpt_samples 10 --from_formulated --hubo_size 100 \
+      --output gpt_circuit_6.png --ascii_out gpt_circuit_6.txt
+
+# qasm circuit
+python save_qasm.py \
+      --ckpt nanoGPT/out-hubo_6nodes/ckpt_6nodes.pt \
+      --n_nodes 6 --from_formulated --hubo_size 100 --num_gpt_samples 10 \
+      --output circuit6.qasm --save_hubo circuit_hubo6.npy
