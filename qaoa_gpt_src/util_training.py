@@ -306,13 +306,13 @@ def eval_ansatz(edgelist, q_circuit, n_nodes, pool_type, verbose=False):
         )
 
     op_indeces = []
-    beta_coef = []
     gamma_coef = []
+    beta_coef = []
 
     for j in range(0, len(q_circuit), 4):
         op_indeces.append(q_circuit[j + 1] - 1)
-        beta_coef.append(q_circuit[j + 2])
-        gamma_coef.append(q_circuit[j + 3])
+        gamma_coef.append(q_circuit[j + 2])
+        beta_coef.append(q_circuit[j + 3])
 
     temp = []
     for idx in op_indeces:

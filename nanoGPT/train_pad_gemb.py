@@ -48,6 +48,7 @@ wandb_project = 'owt'
 wandb_run_name = 'gpt2'  # `'run' + str(time.time())`
 # data
 dataset = 'openwebtext'
+data_dir = ''  # absolute path to tokenized data; if empty, defaults to os.path.join('data', dataset)
 gradient_accumulation_steps = 5 * 8  # used to simulate larger batch sizes
 batch_size = 12  # if gradient_accumulation_steps > 1, this is the micro-batch size
 block_size = 1024
@@ -126,7 +127,8 @@ ctx = nullcontext() if device_type == 'cpu' else torch.amp.autocast(
     device_type=device_type, dtype=ptdtype)
 
 # poor man's data loader
-data_dir = os.path.join('data', dataset)
+if not data_dir:
+    data_dir = os.path.join('data', dataset)
 
 mmap = 'r'
 mmap = None

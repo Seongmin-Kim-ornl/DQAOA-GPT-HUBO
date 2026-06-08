@@ -50,12 +50,12 @@ def sample_ansatz_bitstring_only_hubo_ionq(T, q_circuit, n_nodes,
         raise ValueError(f"Unknown pool_type: {pool_type}")
 
     op_indices = []
-    beta_coef  = []
     gamma_coef = []
+    beta_coef  = []
     for j in range(0, len(q_circuit), 4):
         op_indices.append(q_circuit[j + 1] - 1)
-        beta_coef.append(q_circuit[j + 2])
-        gamma_coef.append(q_circuit[j + 3])
+        gamma_coef.append(q_circuit[j + 2])
+        beta_coef.append(q_circuit[j + 3])
 
     # mixer_pool[layer] = list of Pauli word strings (not cudaq.pauli_word)
     mixer_pool = []

@@ -161,7 +161,8 @@ class CudaQQAOAHUBO:
     ):
         p = self.num_layers
         if init_params is None:
-            init_params = np.array([np.pi / 4.0] * p + [np.pi / 8.0] * p, dtype=float)
+            init_params = np.array([0.01] * p + [0.01] * p, dtype=float)
+            #init_params = np.array([np.pi / 4.0] * p + [np.pi / 8.0] * p, dtype=float)
 
         result = minimize(
             lambda x: self.objective(np.asarray(x, dtype=float)),

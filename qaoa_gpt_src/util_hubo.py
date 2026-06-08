@@ -152,12 +152,12 @@ def sample_ansatz_bitstring_only_hubo(T, q_circuit, n_nodes, pool_type,
         raise ValueError(f"Unknown pool_type: {pool_type}")
 
     op_indices = []
-    beta_coef = []
     gamma_coef = []
+    beta_coef = []
     for j in range(0, len(q_circuit), 4):
         op_indices.append(q_circuit[j + 1] - 1)
-        beta_coef.append(q_circuit[j + 2])
-        gamma_coef.append(q_circuit[j + 3])
+        gamma_coef.append(q_circuit[j + 2])
+        beta_coef.append(q_circuit[j + 3])
 
     mixer_pool = []
     for idx in op_indices:

@@ -305,17 +305,17 @@ def generate_tokens_hubo(results_fpath_str: str,
             tokens_seq.append('new_layer_p')
             tokens_seq.append(row['mixer_pool_index'][p])
 
+            cur_gamma = row['gamma_coef'][p]
+            if -max_abs_param_val < cur_gamma < max_abs_param_val:
+                tokens_seq.append(round(cur_gamma, rounding_digits))
+            else:
+                return None
+
             cur_beta = row['beta_coef'][p]
             if coef_mod:
                 cur_beta = arth_mod(cur_beta, np.pi)
             if -max_abs_param_val < cur_beta < max_abs_param_val:
                 tokens_seq.append(round(cur_beta, rounding_digits))
-            else:
-                return None
-
-            cur_gamma = row['gamma_coef'][p]
-            if -max_abs_param_val < cur_gamma < max_abs_param_val:
-                tokens_seq.append(round(cur_gamma, rounding_digits))
             else:
                 return None
 
