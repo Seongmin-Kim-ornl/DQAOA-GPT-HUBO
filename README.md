@@ -40,7 +40,7 @@ Generates small random (or formulated) HUBOs and solves them with ADAPT-QAOA to 
 
 ```bash
 python step1_generate_data.py \
-    --n_nodes 4 \
+    --n_nodes 6 \
     --hubo_number 500 \
     --rounding_digits 1 \
     --output_dir adapt_results_hubo
@@ -51,7 +51,7 @@ To generate data from a formulated large HUBO (e.g. size 100):
 ```bash
 python step1_generate_data.py \
     --from_formulated --hubo_size 100 \
-    --n_nodes 4 --hubo_number 30 \
+    --n_nodes 6 --hubo_number 30 \
     --rounding_digits 1 \
     --output_dir adapt_results_hubo
 ```
@@ -60,7 +60,7 @@ Key arguments:
 
 | Argument | Default | Description |
 |---|---|---|
-| `--n_nodes` | 4 | Number of binary variables per sub-HUBO |
+| `--n_nodes` | 6 | Number of binary variables per sub-HUBO |
 | `--hubo_number` | 500 | Number of HUBOs to generate |
 | `--rounding_digits` | 1 | Coefficient precision (1 = smaller vocab, recommended) |
 | `--density` | 0.5 | Coefficient density (random HUBOs only, not used with `--from_formulated`) |
@@ -78,8 +78,8 @@ Converts the ADAPT-QAOA results into token sequences for nanoGPT training.
 ```bash
 python step2_tokenize.py \
     --results_dir adapt_results_hubo \
-    --save_dir nanoGPT/data/hubo_4nodes \
-    --n_nodes 4 \
+    --save_dir nanoGPT/data/hubo_6nodes \
+    --n_nodes 6 \
     --rounding_digits 1 \
     --approx_ratio_thr 0.5
 ```
@@ -90,7 +90,7 @@ Key arguments:
 |---|---|---|
 | `--results_dir` | adapt_results_hubo | Output directory from Step 1 |
 | `--save_dir` | nanoGPT/data/hubo_save_dir | Output directory for tokenized data |
-| `--n_nodes` | 4 | Must match Step 1 |
+| `--n_nodes` | 6 | Must match Step 1 |
 | `--rounding_digits` | 1 | Must match Step 1 |
 | `--approx_ratio_thr` | 0.5 | Minimum approximation ratio filter |
 
@@ -102,7 +102,7 @@ Trains the GPT model on the tokenized HUBO data.
 
 ```bash
 python step3_train.py \
-    --data_dir nanoGPT/data/hubo_4nodes \
+    --data_dir nanoGPT/data/hubo_6nodes \
     --max_iters 5000
 ```
 
@@ -127,9 +127,9 @@ Tests the trained GPT model on unseen sub-HUBOs and reports approximation ratio 
 
 ```bash
 python step4_inference_test.py \
-    --ckpt nanoGPT/out-hubo_4nodes/ckpt.pt \
-    --data_dir nanoGPT/data/hubo_4nodes \
-    --n_nodes 4 --n_test 100 --trim_n 5 \
+    --ckpt nanoGPT/out-hubo_6nodes/ckpt.pt \
+    --data_dir nanoGPT/data/hubo_6nodes \
+    --n_nodes 6 --n_test 100 --trim_n 5 \
     --from_formulated --hubo_size 100 --num_gpt_samples 10
 ```
 
@@ -139,7 +139,7 @@ Key arguments:
 |---|---|---|
 | `--ckpt` | — | Path to trained checkpoint (.pt file) |
 | `--data_dir` | dirname(ckpt) | Directory with `meta.pkl` |
-| `--n_nodes` | 4 | Sub-HUBO size — must match training |
+| `--n_nodes` | 6 | Sub-HUBO size — must match training |
 | `--n_test` | 10 | Number of sub-HUBOs to test |
 | `--num_gpt_samples` | 10 | GPT candidate circuits per problem; best energy is kept |
 | `--temperature` | 0.8 | GPT sampling temperature |
@@ -160,8 +160,8 @@ Solves a large HUBO by iteratively decomposing it into sub-HUBOs and solving eac
 ```bash
 python step5_DQAOA_GPT.py --solver gpt \
     --load_txt --hubo_size 100 --ctn 0 --hubo_dir ./HUBOs \
-    --ckpt nanoGPT/out-hubo_4nodes/ckpt.pt \
-    --sub_n 4 --iterations 200
+    --ckpt nanoGPT/out-hubo_6nodes/ckpt.pt \
+    --sub_n 6 --iterations 200
 ```
 
 **Using standard QAOA sub-solver:**
@@ -169,7 +169,7 @@ python step5_DQAOA_GPT.py --solver gpt \
 ```bash
 python step5_DQAOA_GPT.py --solver qaoa \
     --load_txt --hubo_size 100 --ctn 0 --hubo_dir ./HUBOs \
-    --sub_n 4 --iterations 200
+    --sub_n 6 --iterations 200
 ```
 
 Key arguments:
@@ -179,7 +179,7 @@ Key arguments:
 | `--solver` | gpt | Sub-solver: `gpt` or `qaoa` |
 | `--ckpt` | — | [gpt] Path to trained checkpoint |
 | `--hubo_size` | 100 | Full HUBO size N |
-| `--sub_n` | 4 | Sub-HUBO size (must match training) |
+| `--sub_n` | 6 | Sub-HUBO size (must match training) |
 | `--iterations` | 200 | DQAOA iterations |
 | `--num_gpt_samples` | 10 | [gpt] GPT candidate circuits per sub-HUBO |
 | `--load_txt` | — | Load HUBO from text files in `--hubo_dir` |
