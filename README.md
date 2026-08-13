@@ -97,7 +97,7 @@ Key arguments:
 | `--save_dir` | nanoGPT/data/hubo_save_dir | Output directory for tokenized data |
 | `--n_nodes` | 6 | Must match Step 1 |
 | `--rounding_digits` | 1 | Must match Step 1 |
-| `--approx_ratio_thr` | 0.5 | Minimum approximation ratio filter |
+| `--approx_ratio_thr` | 0.97 | Minimum approximation ratio filter |
 
 ---
 
