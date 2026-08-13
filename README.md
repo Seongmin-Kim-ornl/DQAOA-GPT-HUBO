@@ -16,7 +16,7 @@ pip install -r requirements.txt
 
 > **Note:** `cuda-quantum` installation depends on your CUDA version — see the [NVIDIA CUDA-Q docs](https://nvidia.github.io/cuda-quantum/latest) for the correct wheel.
 
-Step 6 additionally requires MPI (`mpi4py` + an MPI runtime such as OpenMPI or Cray MPICH) since it runs as a manager/worker job across multiple ranks.
+Step 6 additionally requires MPI (`mpi4py`) since it runs as a manager/worker job across multiple ranks.
 
 ---
 
@@ -220,7 +220,7 @@ Key arguments:
 | `--hubo_size` | 100 | Full HUBO size N |
 | `--sub_n` | 10 | Sub-HUBO size (must match training) |
 | `--iterations` | 200 | DQAOA cycles (all workers solve in parallel each cycle) |
-| `--num_gpt_samples` | 10 | [gpt] GPT candidate circuits per sub-HUBO |
+| `--num_gpt_samples` | 1 | [gpt] GPT candidate circuits per sub-HUBO |
 | `--load_txt` | — | Load HUBO from `{size}_QUBO*.txt` / `{size}_k_third*.txt` in `--hubo_dir` (see `--ctn`) |
 | `--load_formulated` | — | Load via `subHUBO_gen.formulate_HUBO()` (reads `{size}_QUBO.txt` / `{size}_k_third.txt` from cwd) |
 | `--hubo_npy` | — | Load a pre-saved dense HUBO tensor (`.npy`) |
