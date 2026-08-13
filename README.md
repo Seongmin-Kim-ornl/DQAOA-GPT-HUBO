@@ -16,6 +16,8 @@ pip install -r requirements.txt
 
 > **Note:** `cuda-quantum` installation depends on your CUDA version — see the [NVIDIA CUDA-Q docs](https://nvidia.github.io/cuda-quantum/latest) for the correct wheel.
 
+Step 6 additionally requires MPI (`mpi4py` + an MPI runtime such as OpenMPI or Cray MPICH) since it runs as a manager/worker job across multiple ranks.
+
 ---
 
 ## Pipeline Overview
@@ -29,7 +31,10 @@ Step 3: Train nanoGPT
   ↓
 Step 4: Test inference on unseen sub-HUBOs
   ↓
-Step 5: Solve a large HUBO with DQAOA
+Step 5: Self-bootstrap more training data with the trained GPT (optional,
+        feeds back into Step 2 → Step 3 for another training round)
+  ↓
+Step 6: Solve a large HUBO with DQAOA (MPI, multi-GPU)
 ```
 
 ---
@@ -117,7 +122,7 @@ Key arguments:
 | `--device` | (from config) | `cuda`, `cpu`, or `mps` |
 | `--ckpt_name` | None | Optional name for the saved checkpoint |
 
-The best checkpoint is saved to `nanoGPT/out-<data_dir_name>/ckpt.pt`.
+The best checkpoint is saved to `nanoGPT/out-<data_dir_name>/ckpt.pt` (or `--out_dir` if given).
 
 ---
 
@@ -151,26 +156,59 @@ Key arguments:
 
 ---
 
-## Step 5 — Solve Large HUBO with DQAOA
+## Step 5 — Self-Bootstrap Training Data with GPT
 
-Solves a large HUBO by iteratively decomposing it into sub-HUBOs and solving each with the trained GPT model (or standard QAOA).
+Once a GPT model has been trained (Steps 1–3), this step uses the trained model itself to generate *new* training data — GPT proposes a circuit for each sampled sub-HUBO directly, skipping the expensive classical ADAPT-QAOA optimization loop from Step 1. Only circuits meeting `--ar_threshold` are kept. Output is written in the same CSV format as Step 1, so it can be fed straight back into Step 2 for another round of tokenization + training (active-learning / self-bootstrap loop), or used to cheaply extend the dataset to sizes where Step 1's classical solve is too slow.
+
+```bash
+python step5_GPTdataset.py \
+    --ckpt nanoGPT/out-hubo_6nodes/ckpt.pt \
+    --output_dir adapt_results_hubo_bootstrap \
+    --n_nodes 6 --hubo_number 500 \
+    --ar_threshold 0.80 --num_gpt_samples 5
+```
+
+Key arguments:
+
+| Argument | Default | Description |
+|---|---|---|
+| `--ckpt` | — | Path to trained checkpoint (.pt file) |
+| `--data_dir` | dirname(ckpt) | Directory with `meta.pkl` |
+| `--n_nodes` | 6 | Sub-HUBO size — must match training |
+| `--hubo_number` | 500 | Number of sub-HUBOs to sample and try |
+| `--ar_threshold` | 0.80 | Minimum AR (vs. brute-force/SA reference) to keep a GPT-generated circuit |
+| `--num_gpt_samples` | 5 | GPT candidate circuits per sub-HUBO; best-AR one is kept |
+| `--temperature` | 0.8 | GPT sampling temperature |
+| `--from_formulated` | — | Draw sub-HUBOs from a formulated large HUBO (requires `--hubo_size`) |
+| `--hubo_npy_dir` | — | Alternative: load sub-HUBOs from a directory of `.npy` tensors |
+| `--output_dir` | adapt_results_hubo | Output directory (Step 2-compatible CSVs) |
+| `--checkpoint_every` | 20 | Write partial results to disk every N accepted circuits |
+| `--no_brute_force` / `--no_sa` | — | Skip the corresponding reference solver used to compute AR |
+
+---
+
+## Step 6 — Solve Large HUBO with DQAOA (MPI)
+
+Solves a large HUBO by iteratively decomposing it into sub-HUBOs and solving each with the trained GPT model (or standard QAOA). Runs as an MPI job: rank 0 is the manager (decomposes, dispatches, aggregates with a greedy coordinate update); ranks 1..N are workers, each pinned to one GPU, each solving one sub-HUBO per cycle in parallel.
 
 **Using GPT sub-solver:**
 
 ```bash
-python step5_DQAOA_GPT.py --solver gpt \
+mpirun -np 9 python step6_DQAOA_GPT.py --solver gpt \
     --load_txt --hubo_size 100 --ctn 0 --hubo_dir ./HUBOs \
     --ckpt nanoGPT/out-hubo_6nodes/ckpt.pt \
-    --sub_n 6 --iterations 200
+    --sub_n 6 --iterations 200 --dec_algo ifd
 ```
 
 **Using standard QAOA sub-solver:**
 
 ```bash
-python step5_DQAOA_GPT.py --solver qaoa \
+mpirun -np 5 python step6_DQAOA_GPT.py --solver qaoa \
     --load_txt --hubo_size 100 --ctn 0 --hubo_dir ./HUBOs \
-    --sub_n 6 --iterations 200
+    --sub_n 6 --iterations 200 --dec_algo bfs
 ```
+
+`-np N` gives 1 manager + `N-1` workers; each cycle solves `N-1` sub-HUBOs in parallel. On SLURM, launch with `srun -N <nodes> -n <total ranks> python step6_DQAOA_GPT.py ...` instead of `mpirun`.
 
 Key arguments:
 
@@ -178,13 +216,17 @@ Key arguments:
 |---|---|---|
 | `--solver` | gpt | Sub-solver: `gpt` or `qaoa` |
 | `--ckpt` | — | [gpt] Path to trained checkpoint |
+| `--dec_algo` | random | Sub-HUBO decomposition: `random`, `ifd`, `bfs`, or `pfs` |
 | `--hubo_size` | 100 | Full HUBO size N |
-| `--sub_n` | 6 | Sub-HUBO size (must match training) |
-| `--iterations` | 200 | DQAOA iterations |
+| `--sub_n` | 10 | Sub-HUBO size (must match training) |
+| `--iterations` | 200 | DQAOA cycles (all workers solve in parallel each cycle) |
 | `--num_gpt_samples` | 10 | [gpt] GPT candidate circuits per sub-HUBO |
-| `--load_txt` | — | Load HUBO from text files in `--hubo_dir` |
-| `--load_formulated` | — | Load via `subHUBO_gen.formulate_HUBO()` |
+| `--load_txt` | — | Load HUBO from `{size}_QUBO*.txt` / `{size}_k_third*.txt` in `--hubo_dir` (see `--ctn`) |
+| `--load_formulated` | — | Load via `subHUBO_gen.formulate_HUBO()` (reads `{size}_QUBO.txt` / `{size}_k_third.txt` from cwd) |
+| `--hubo_npy` | — | Load a pre-saved dense HUBO tensor (`.npy`) |
+| (none of the above) | — | Generate a random HUBO instead (`--density`, `--weight_range`, `--seed_hubo`) |
 | `--no_factorized` | — | Use dense O(N³) energy eval instead of factorized O(N²) |
+| `--threads_per_worker` | 2 | OMP/MKL/torch threads per worker rank |
 | `--save_solution` | None | Path to save the solution vector (`.npy`) |
 
 ---
@@ -192,16 +234,22 @@ Key arguments:
 ## Project Structure
 
 ```
-├── step1_generate_data.py       # Step 1: data generation
+├── step1_generate_data.py       # Step 1: data generation (ADAPT-QAOA)
 ├── step2_tokenize.py            # Step 2: tokenization
 ├── step3_train.py               # Step 3: GPT training
 ├── step4_inference_test.py      # Step 4: inference test (AR statistics)
-├── step5_DQAOA_GPT.py           # Step 5: DQAOA solver
-├── DQAOA.py                     # DQAOA class
-├── subHUBO_gen.py               # Sub-HUBO decomposition
+├── step5_GPTdataset.py          # Step 5: self-bootstrap data generation via GPT
+├── step6_DQAOA_GPT.py           # Step 6: MPI DQAOA solver
+├── DQAOA.py                     # Single-process (non-MPI) DQAOA class
+├── subHUBO_gen.py                # Sub-HUBO decomposition + formulated-HUBO loading
+├── save_qasm.py / run_qasm_aer.py  # Export a GPT circuit to OpenQASM and replay it on qiskit-aer
+├── draw_circuit.py              # Visualize a GPT-generated circuit
+├── check_duplicates.py          # Dedupe generated sub-HUBOs by hash
 ├── qaoa_gpt_src/                # Core library (ADAPT-QAOA, tokenizer, model interface)
 ├── nanoGPT/                     # nanoGPT training code
-├── utils/                       # Utility solvers
-├── HUBOs/                       # Example HUBO problem instances
+├── utils/                       # Solver utilities (GPT sub-solver, standard-QAOA CudaQ solver)
+├── HUBOs/                       # Example large HUBO instances (QUBO + k_third text files)
+├── 01_data/                     # Example Step 1 output (ADAPT-QAOA training data)
+├── 03_trained_GPT_model/        # Example trained checkpoints (6/8/10-node)
 └── requirements.txt
 ```

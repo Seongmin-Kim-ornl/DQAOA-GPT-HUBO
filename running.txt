@@ -29,7 +29,15 @@ python step4_inference_test.py \
       --n_nodes 6 --n_test 100 --trim_n 5 \
       --from_formulated --hubo_size 100 --num_gpt_samples 10
 
-srun -N 2 -n 15 python step5_DQAOA_GPT.py \
+# (optional) step 5: self-bootstrap more training data with the trained GPT,
+# then feed adapt_results_hubo_bootstrap back into step2_tokenize.py + step3_train.py
+python step5_GPTdataset.py \
+      --ckpt nanoGPT/out-hubo_6nodes/ckpt_6nodes.pt \
+      --output_dir adapt_results_hubo_bootstrap \
+      --n_nodes 6 --hubo_number 500 \
+      --ar_threshold 0.80 --num_gpt_samples 5
+
+srun -N 2 -n 15 python step6_DQAOA_GPT.py \
      --solver gpt --ckpt nanoGPT/out-hubo_6nodes/ckpt_6nodes.pt \
      --load_txt --hubo_size 100 --ctn 0 --hubo_dir HUBOs/ \
      --sub_n 6 --iterations 10 \
