@@ -46,7 +46,7 @@ Generates small random (or formulated) HUBOs and solves them with ADAPT-QAOA to 
 ```bash
 python step1_generate_data.py \
     --n_nodes 6 \
-    --hubo_number 500 \
+    --hubo_number 5000 \
     --rounding_digits 1 \
     --output_dir adapt_results_hubo
 ```
@@ -56,7 +56,7 @@ To generate data from a formulated large HUBO (e.g. size 100):
 ```bash
 python step1_generate_data.py \
     --from_formulated --hubo_size 100 \
-    --n_nodes 6 --hubo_number 30 \
+    --n_nodes 6 --hubo_number 5000 \
     --rounding_digits 1 \
     --output_dir adapt_results_hubo
 ```
@@ -66,7 +66,7 @@ Key arguments:
 | Argument | Default | Description |
 |---|---|---|
 | `--n_nodes` | 6 | Number of binary variables per sub-HUBO |
-| `--hubo_number` | 500 | Number of HUBOs to generate |
+| `--hubo_number` | 5000 | Number of HUBOs to generate |
 | `--rounding_digits` | 1 | Coefficient precision (1 = smaller vocab, recommended) |
 | `--density` | 0.5 | Coefficient density (random HUBOs only, not used with `--from_formulated`) |
 | `--weight_range` | 1.0 | Coefficients sampled from U(-w, w) (random HUBOs only, not used with `--from_formulated`) |
