@@ -1,4 +1,4 @@
-out_dir = 'out-hubo_8nodes_multigamma'
+out_dir = 'out-tokens_8nodes'
 eval_interval = 250
 eval_iters = 200
 log_interval = 10
@@ -6,7 +6,7 @@ eval_ar_every = 5000
 
 always_save_checkpoint = False
 
-dataset = 'hubo_8nodes_multigamma'
+dataset = 'tokens_8nodes'
 gradient_accumulation_steps = 1
 batch_size = 64
 block_size = 512
