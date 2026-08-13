@@ -165,7 +165,7 @@ python step5_GPTdataset.py \
     --ckpt nanoGPT/out-hubo_6nodes/ckpt.pt \
     --output_dir adapt_results_hubo_bootstrap \
     --n_nodes 6 --hubo_number 500 \
-    --ar_threshold 0.80 --num_gpt_samples 5
+    --ar_threshold 0.97 --num_gpt_samples 10
 ```
 
 Key arguments:
@@ -176,8 +176,8 @@ Key arguments:
 | `--data_dir` | dirname(ckpt) | Directory with `meta.pkl` |
 | `--n_nodes` | 6 | Sub-HUBO size — must match training |
 | `--hubo_number` | 500 | Number of sub-HUBOs to sample and try |
-| `--ar_threshold` | 0.80 | Minimum AR (vs. brute-force/SA reference) to keep a GPT-generated circuit |
-| `--num_gpt_samples` | 5 | GPT candidate circuits per sub-HUBO; best-AR one is kept |
+| `--ar_threshold` | 0.97 | Minimum AR (vs. brute-force/SA reference) to keep a GPT-generated circuit |
+| `--num_gpt_samples` | 10 | GPT candidate circuits per sub-HUBO; best-AR one is kept |
 | `--temperature` | 0.8 | GPT sampling temperature |
 | `--from_formulated` | — | Draw sub-HUBOs from a formulated large HUBO (requires `--hubo_size`) |
 | `--hubo_npy_dir` | — | Alternative: load sub-HUBOs from a directory of `.npy` tensors |
@@ -225,8 +225,6 @@ Key arguments:
 | `--load_formulated` | — | Load via `subHUBO_gen.formulate_HUBO()` (reads `{size}_QUBO.txt` / `{size}_k_third.txt` from cwd) |
 | `--hubo_npy` | — | Load a pre-saved dense HUBO tensor (`.npy`) |
 | (none of the above) | — | Generate a random HUBO instead (`--density`, `--weight_range`, `--seed_hubo`) |
-| `--no_factorized` | — | Use dense O(N³) energy eval instead of factorized O(N²) |
-| `--threads_per_worker` | 2 | OMP/MKL/torch threads per worker rank |
 | `--save_solution` | None | Path to save the solution vector (`.npy`) |
 
 ---
