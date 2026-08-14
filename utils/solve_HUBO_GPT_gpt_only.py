@@ -31,6 +31,7 @@ import sys
 import contextlib
 import io
 import pickle
+import random
 import re
 
 import numpy as np
@@ -76,7 +77,7 @@ def _solve_hubo_circuits_gpt_only(qaoa_gpt_circ_df, T_dict, n_nodes, pool_type,
         bitstrings = []
         if T is not None:
             for circ in q_circuits:
-                bitstring = '0' * n_nodes
+                bitstring = ''.join(random.choice('01') for _ in range(n_nodes))
                 try:
                     bitstring = sample_ansatz_bitstring_only_hubo(
                         T, circ, n_nodes, pool_type,
@@ -176,7 +177,7 @@ def solve_sub_HUBO_GPT_gpt_only(sub_HUBO,
         verbose=verbose,
     )
 
-    best_bitstring = '0' * n_nodes
+    best_bitstring = ''.join(random.choice('01') for _ in range(n_nodes))
     best_energy = float('inf')
 
     for _, row in results_df.iterrows():
