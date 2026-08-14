@@ -1,24 +1,21 @@
 """
-STEP 5-1 — Test inference on new unseen sub-HUBOs (with trimmed statistics).
+STEP 4-2 — Test inference on new unseen sub-HUBOs, executing ONLY the
+GPT-generated candidate circuits (not the extra empty adapt_circuit slot
+that step4_inference_test.py also samples on every problem).
 
-Same as step5_inference_test.py but also reports trimmed-mean AR, excluding
-the worst and best --trim_n cases from the summary statistics.
+Identical to step4_inference_test.py in every other respect (same CLI
+args, same warm-up/trimmed-stats reporting) — the only difference is the
+solver: this uses utils.solve_HUBO_GPT_gpt_only.solve_sub_HUBO_GPT_gpt_only
+instead of utils.solve_HUBO_GPT.solve_sub_HUBO_GPT, so with
+--num_gpt_samples 1 exactly 1 circuit runs per problem, not 2. See that
+module's docstring for why the extra circuit exists in the original and
+why it's excluded here rather than just excluded from timing.
 
 Usage:
-    python step5_1_inference_test.py [options]
-
-Examples:
-    # Basic test: 10 random sub-HUBOs of size 4, trim 2 outliers
-    python step5_1_inference_test.py \\
+    python step4-2_inference_test_gpt_only.py \\
         --ckpt nanoGPT/out-hubo_save_dir/ckpt_10000.pt \\
         --data_dir nanoGPT/data/hubo_save_dir \\
         --n_nodes 4 --n_test 10 --trim_n 2
-
-    # Use pre-saved .npy sub-HUBOs
-    python step5_1_inference_test.py \\
-        --ckpt nanoGPT/out-hubo_save_dir/ckpt_10000.pt \\
-        --data_dir nanoGPT/data/hubo_save_dir \\
-        --npy_dir subhubo_npy/
 """
 
 import argparse
@@ -37,11 +34,11 @@ from qaoa_gpt_src.hubo_hamiltonian import (
     brute_force_hubo,
     simulated_annealing_hubo,
 )
-from utils.solve_HUBO_GPT import solve_sub_HUBO_GPT
+from utils.solve_HUBO_GPT_gpt_only import solve_sub_HUBO_GPT_gpt_only
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Test HUBO-GPT inference on sub-HUBOs (trimmed stats)")
+    p = argparse.ArgumentParser(description="Test HUBO-GPT inference on sub-HUBOs, GPT circuits only")
 
     # Model paths
     p.add_argument("--ckpt", type=str, required=True,
@@ -104,8 +101,6 @@ def parse_args():
 def main():
     args = parse_args()
 
-    project_root = os.path.dirname(os.path.abspath(__file__))
-
     # Resolve paths
     ckpt       = args.ckpt
     data_dir   = args.data_dir or os.path.dirname(os.path.abspath(ckpt))
@@ -119,13 +114,14 @@ def main():
             sys.exit(1)
 
     print("=" * 60)
-    print("STEP 5-1: HUBO-GPT inference test (trimmed statistics)")
+    print("STEP 4-2: HUBO-GPT inference test (GPT circuits only, no NULL circuit)")
     print("=" * 60)
     print(f"  checkpoint  : {ckpt}")
     print(f"  data_dir    : {data_dir}")
     print(f"  n_nodes     : {args.n_nodes}")
     print(f"  device      : {args.device}")
     print(f"  trim_n      : {args.trim_n}")
+    print(f"  circuits/problem : {args.num_gpt_samples}  (GPT-generated only, no extra empty circuit)")
     print("=" * 60)
 
     # ---- Load or generate test HUBOs --------------------------------------
@@ -186,9 +182,9 @@ def main():
     results = []
     for idx, T in enumerate(test_tensors):
 
-        # GPT-based solution
+        # GPT-based solution (GPT-generated circuits only)
         t_start = time.time()
-        x_gpt = solve_sub_HUBO_GPT(
+        x_gpt = solve_sub_HUBO_GPT_gpt_only(
             T,
             model_ckpt=ckpt,
             data_dir=data_dir,
