@@ -241,7 +241,6 @@ Key arguments:
 ├── DQAOA.py                     # Single-process (non-MPI) DQAOA class
 ├── subHUBO_gen.py                # Sub-HUBO decomposition + formulated-HUBO loading
 ├── save_qasm.py / run_qasm_aer.py  # Export a GPT circuit to OpenQASM and replay it on qiskit-aer
-├── draw_circuit.py              # Visualize a GPT-generated circuit
 ├── check_duplicates.py          # Dedupe generated sub-HUBOs by hash
 ├── qaoa_gpt_src/                # Core library (ADAPT-QAOA, tokenizer, model interface)
 ├── nanoGPT/                     # nanoGPT training code
